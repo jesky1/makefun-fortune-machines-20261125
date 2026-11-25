@@ -2,7 +2,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { FORTUNE, OUTPUT_PATH } from "../main.ts";
+import { FORTUNE, OUTPUT_PATH, validateFortune } from "../main.ts";
 
 function runProgram() {
   const r = spawnSync(process.execPath, ["main.ts"], {
@@ -33,4 +33,16 @@ test("program is deterministic across runs", () => {
   runProgram();
   const second = readFileSync(OUTPUT_PATH);
   assert.deepEqual(first, second);
+});
+
+test("validator accepts the shipped fortune", () => {
+  assert.equal(validateFortune(FORTUNE), true);
+});
+
+test("validator rejects over-long, empty, whitespace-only and multi-line text", () => {
+  assert.throws(() => validateFortune("x".repeat(201)), /at most 200/);
+  assert.throws(() => validateFortune(""), /empty/);
+  assert.throws(() => validateFortune("   \t  "), /only whitespace/);
+  assert.throws(() => validateFortune("line one\nline two"), /single line/);
+  assert.throws(() => validateFortune(" padded "), /leading or trailing/);
 });

@@ -11,11 +11,23 @@ export const FORTUNE =
 
 export const OUTPUT_PATH = "/output/entry.txt";
 
-export function writeFortune() {
-  const chars = [...FORTUNE].length;
-  if (chars < 1 || chars > 200) {
-    throw new Error(`fortune must be 1-200 characters, got ${chars}`);
+// Gate: the competition scorer accepts UTF-8 text of 1-200 characters,
+// not only white space, on a single line. Reject anything outside it
+// before anything is written, so a bad fortune can never reach the gate.
+export function validateFortune(text) {
+  const chars = [...text].length;
+  if (chars < 1) throw new Error("fortune must not be empty");
+  if (chars > 200) throw new Error(`fortune must be at most 200 characters, got ${chars}`);
+  if (text.trim().length === 0) throw new Error("fortune must not be only whitespace");
+  if (text.includes("\n") || text.includes("\r")) {
+    throw new Error("fortune must be a single line");
   }
+  if (text !== text.trim()) throw new Error("fortune must not have leading or trailing whitespace");
+  return true;
+}
+
+export function writeFortune() {
+  validateFortune(FORTUNE);
   mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
   writeFileSync(OUTPUT_PATH, FORTUNE, "utf8");
   return OUTPUT_PATH;
